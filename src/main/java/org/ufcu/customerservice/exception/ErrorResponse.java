@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
 public class ErrorResponse {
     private String errorCode;
     private String errorMessage;
-    private String details;
-    private ZonedDateTime timestamp;
+//    private String details;
+//    private ZonedDateTime timestamp;
 }
 

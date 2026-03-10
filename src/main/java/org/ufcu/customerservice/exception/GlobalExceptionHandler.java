@@ -1,93 +1,46 @@
 package org.ufcu.customerservice.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import jakarta.validation.ConstraintViolationException;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    /**
-     * Handle validation errors when @NotNull constraint is violated
-     */
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
-            ConstraintViolationException ex) {
-
-        String errorMessage = "Validation failed: " + ex.getMessage();
-        ErrorResponse errorResponse = new ErrorResponse(
-            "VALIDATION_ERROR",
-            "Invalid input parameters",
-            errorMessage,
-            ZonedDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
-     * Handle MethodArgumentNotValidException for request body validation
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException ex) {
-
-        String fieldErrors = ex.getBindingResult().getFieldErrors()
-                .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .reduce("", (a, b) -> a + (a.isEmpty() ? "" : ", ") + b);
-
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
+        StringBuilder errorMsg = new StringBuilder();
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            errorMsg.append(fieldError.getField()).append(": ").append(fieldError.getDefaultMessage()).append("; ");
+        }
         ErrorResponse errorResponse = new ErrorResponse(
-            "INVALID_REQUEST_BODY",
-            "Request body validation failed",
-            fieldErrors.isEmpty() ? ex.getMessage() : fieldErrors,
-            ZonedDateTime.now()
+                "VALIDATION_ERROR",
+                errorMsg.toString()
         );
-
+        log.error("Validation error: {}", errorMsg.toString());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    /**
-     * Handle missing or null path variables
-     */
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
-            MethodArgumentTypeMismatchException ex) {
-
-        String errorMessage = String.format("Invalid value for parameter '%s': %s",
-            ex.getName(), ex.getValue());
-
-        ErrorResponse errorResponse = new ErrorResponse(
-            "INVALID_PATH_VARIABLE",
-            "Invalid path variable",
-            errorMessage,
-            ZonedDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
+        log.error("Validation error: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("VALIDATION_ERROR", e.getMessage()));
     }
 
-    /**
-     * Handle generic exceptions
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
-
-        ErrorResponse errorResponse = new ErrorResponse(
-            "INTERNAL_SERVER_ERROR",
-            "An unexpected error occurred",
-            ex.getMessage(),
-            ZonedDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
+        log.error("Runtime error: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("ERROR", e.getMessage()));
     }
-
 }
+
 
