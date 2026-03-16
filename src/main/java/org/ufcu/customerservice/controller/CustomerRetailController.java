@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.ufcu.customerservice.dto.OnboardingRequest;
 import org.ufcu.customerservice.dto.OnboardingResponse;
 import org.ufcu.customerservice.service.OnboardingService;
@@ -47,6 +44,20 @@ public class CustomerRetailController {
             throw e;
         }
     }
+
+    @GetMapping("/{upid}")
+    public ResponseEntity<OnboardingResponse> getCustomerByUpid(@PathVariable String upid) {
+        log.info("Received request to fetch customer with UPID: {}", upid);
+        try {
+            OnboardingResponse response = onboardingService.getCustomerByUpid(upid);
+            log.info("Customer retrieved successfully - UPID: {}, CustomerId: {}", upid, response.getCustomerId());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error retrieving customer for UPID: {}", upid, e);
+            throw e;
+        }
+    }
+
 }
 
 

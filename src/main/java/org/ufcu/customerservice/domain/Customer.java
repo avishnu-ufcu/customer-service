@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.ufcu.customerservice.util.HumanReadableIDGenerator;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,8 +22,8 @@ public class Customer {
     @Column(name = "customer_id", unique = true, nullable = false, length = 36)
     private String customerId;
 
-    @Column(name = "human_readable_customer_id")
-    private String humanReadCustomerId;
+    @Column(name = "UID", unique = true)
+    private String uid;
 
     private String firstName;
     private String lastName;
@@ -47,9 +46,9 @@ public class Customer {
         if (this.customerId == null) {
             UUID uuid = UUID.randomUUID();
             this.customerId = uuid.toString();
-            // Human readable ID generate
-            this.humanReadCustomerId =
-                    HumanReadableIDGenerator.generateHumanReadableID("OB", uuid);
         }
     }
 }
+
+
+

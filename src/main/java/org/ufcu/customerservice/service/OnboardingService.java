@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class OnboardingService {
 
+   @Autowired
+    private UidGeneratorService uidGeneratorService;
+
     @Autowired
     private CustomerRepository customerRepository;
 
@@ -80,7 +83,12 @@ public class OnboardingService {
 
             log.debug("Creating new customer record for caseId: {}", request.getCaseId());
             Customer customer = mapRequestToCustomer(request.getCustomer());
-            customer = customerRepository.save(customer);
+        // Generate UID before saving
+        String uid = uidGeneratorService.generateUID();
+        customer.setUid(uid);
+
+        customer = customerRepository.save(customer);
+        log.info("Generated UID: {}", uid);
             log.info("Customer created successfully with caseId, customerID: {}, {}", request.getCaseId(), customer.getId());
 
             log.info("Creating citizenship record for caseId: {}", request.getCaseId());
@@ -103,6 +111,17 @@ public class OnboardingService {
             log.info("Onboarding completed successfully for case: {}", request.getCaseId());
             return buildOnboardingResponse(request.getCaseId(), customer, profileIds);
 
+    }
+
+    public OnboardingResponse getCustomerByUpid(String upid) {
+        Customer customer = customerRepository.findByCustomerId(upid)
+                .orElseThrow(() -> new RuntimeException("Customer not found for UPID: " + upid));
+
+        List<String> profileIds = customer.getProfiles().stream()
+                .map(p -> p.getId().toString())
+                .collect(Collectors.toList());
+
+        return buildOnboardingResponse(upid, customer, profileIds); // already exists
     }
 
     /**
@@ -333,6 +352,7 @@ public class OnboardingService {
         OnboardingResponse response = new OnboardingResponse();
         response.setCaseId(caseId);
         response.setCustomerId(customer.getCustomerId());
+        response.setUid(customer.getUid());
         response.setFirstName(customer.getFirstName());
         response.setLastName(customer.getLastName());
         response.setEmail(customer.getEmail());

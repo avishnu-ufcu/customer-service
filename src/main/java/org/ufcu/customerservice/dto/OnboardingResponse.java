@@ -13,7 +13,7 @@ public class OnboardingResponse {
 
     private String caseId;
     private String customerId;
-    private String humanReadableCustomerId;
+    private String uid;
     private String firstName;
     private String lastName;
     private String email;
